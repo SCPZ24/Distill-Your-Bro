@@ -1,4 +1,4 @@
-# Distill Your Bro 🧪🤝
+# Distill Your Bro ⚗️🧠 ➡️ 💻
 
 萃取好兄弟的灵魂，变成一个skill。
 
