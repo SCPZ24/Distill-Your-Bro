@@ -2,9 +2,20 @@
 # ----------------配置一个模型即可-------------------
 # ---------------多了我也解析不出来------------------
 # ------------------------------------------------
-model:
-  name: DeepSeek-V3.2-thinking
-  api_key: 
-  model_name: Deepseek-3.2-thinking
-  base_url: https://api.deepseek.cn/v1
- 
+
+# DeepSeek 配置 (推荐)
+# 获取 API Key: https://platform.deepseek.com/
+# model:
+#   name: DeepSeek-V3
+#   api_key: sk-your-deepseek-api-key-here
+#   model_name: deepseek-reasoner
+#   base_url: https://api.deepseek.com
+
+# Volcengine 火山引擎配置
+# 获取 API Key: https://console.volcengine.com/ark/region:ark+cn-beijing/apikey
+# 文档: https://www.volcengine.com/docs/82379/1399008
+# model:
+#   name: Volcengine-Doubao-Pro
+#   api_key: your-ark-api-key-here
+#   model_name: doubao-seed-2-0-pro-260215
+#   base_url: https://ark.cn-beijing.volces.com/api/v3
