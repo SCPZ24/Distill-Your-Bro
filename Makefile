@@ -32,7 +32,7 @@ build:
 	cd frontend && pnpm run build
 
 # Quick start - install dependencies and start server
-s: install server
+s: install build server
 
 # Help
 help:
