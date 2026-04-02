@@ -188,7 +188,7 @@ export default function SoulCreatePage() {
                   type="text"
                   value={broName}
                   onChange={(e) => setBroName(e.target.value)}
-                  placeholder="输入你兄弟的名字"
+                  placeholder="输入在聊天记录中 你兄弟的id"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 />
               </div>
@@ -202,8 +202,8 @@ export default function SoulCreatePage() {
                   onChange={(e) => setPlatform(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 >
-                  <option value="wechat">微信</option>
                   <option value="qq">QQ</option>
+                  <option value="wechat">微信</option>
                   <option value="telegram">Telegram</option>
                 </select>
               </div>

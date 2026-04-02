@@ -32,7 +32,7 @@ build:
 	cd frontend && pnpm run build
 
 # Quick start - install dependencies and start server
-s: install build server
+start: install build server
 
 # Help
 help:
@@ -42,4 +42,4 @@ help:
 	@echo "  make server   - Start Flask server only"
 	@echo "  make clean    - Clean build artifacts"
 	@echo "  make build    - Build frontend for production"
-	@echo "  make s        - Quick start (install + server)"
+	@echo "  make start    - Quick start (install + server)"

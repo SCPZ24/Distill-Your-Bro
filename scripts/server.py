@@ -1,4 +1,5 @@
 import os
+import sys
 from flask import Flask, jsonify, send_from_directory
 
 
@@ -6,11 +7,18 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 FRONTEND_DIR = os.path.join(ROOT, "frontend")
 DIST_DIR = os.path.join(FRONTEND_DIR, "dist")
 
+if ROOT not in sys.path:
+    sys.path.insert(0, ROOT)
+
 app = Flask(
     __name__,
     static_folder=DIST_DIR if os.path.isdir(DIST_DIR) else FRONTEND_DIR,
     template_folder=DIST_DIR if os.path.isdir(DIST_DIR) else FRONTEND_DIR,
 )
+
+from backend.gateway import gateway as api_gateway
+
+app.register_blueprint(api_gateway)
 
 
 @app.route("/")
