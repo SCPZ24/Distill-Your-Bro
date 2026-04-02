@@ -14,6 +14,10 @@ class Model(ABC):
 class ModelManager:
     _instance: Optional["ModelManager"] = None
 
+    @classmethod
+    def get_singleton_instance(cls) -> "ModelManager":
+        return cls()
+
     def __new__(cls) -> "ModelManager":
         if cls._instance is None:
             cls._instance = super().__new__(cls)
