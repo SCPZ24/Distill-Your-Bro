@@ -23,30 +23,41 @@ export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    fetchSession()
+    if (!id) return
+    let isActive = true
+
+    const run = async () => {
+      try {
+        const response = await fetch(`/api/sessions/${id}`)
+        const result = await response.json()
+        if (!isActive) return
+
+        if (result.ok) {
+          setSession(result.data)
+        } else {
+          toast.error('获取会话失败')
+        }
+      } catch (error) {
+        if (isActive) {
+          toast.error('网络错误')
+        }
+      } finally {
+        if (isActive) {
+          setLoading(false)
+        }
+      }
+    }
+
+    run()
+
+    return () => {
+      isActive = false
+    }
   }, [id])
 
   useEffect(() => {
     scrollToBottom()
   }, [session?.chat_history])
-
-  const fetchSession = async () => {
-    if (!id) return
-    
-    try {
-      const response = await fetch(`/api/sessions/${id}`)
-      const result = await response.json()
-      if (result.ok) {
-        setSession(result.data)
-      } else {
-        toast.error('获取会话失败')
-      }
-    } catch (error) {
-      toast.error('网络错误')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const sendMessage = async () => {
     if (!message.trim() || !id) return

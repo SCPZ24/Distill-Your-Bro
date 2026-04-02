@@ -3,16 +3,23 @@ import { Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Upload, Settings, Eye, Save, RefreshCw } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 
+type ParsedChatLog = {
+  platform?: string
+  messages_count?: number
+  participants?: string[]
+  parsed_at?: string
+}
+
 export default function SoulCreatePage() {
   const navigate = useNavigate()
   const [broName, setBroName] = useState('')
   const [platform, setPlatform] = useState('wechat')
   const [textOnly, setTextOnly] = useState(true)
-  const [myName, setMyName] = useState('我')
+  const myName = '我'
   const [chatLog, setChatLog] = useState('')
   const [isParsing, setIsParsing] = useState(false)
   const [isDistilling, setIsDistilling] = useState(false)
-  const [parsedData, setParsedData] = useState<any>(null)
+  const [parsedData, setParsedData] = useState<ParsedChatLog | null>(null)
   const [soulPreview, setSoulPreview] = useState('')
   const [currentStep, setCurrentStep] = useState<'upload' | 'parse' | 'distill' | 'preview'>('upload')
 
@@ -265,19 +272,21 @@ export default function SoulCreatePage() {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="font-medium text-green-700">平台：</span>
-                    <span className="text-green-600">{parsedData.platform}</span>
+                    <span className="text-green-600">{parsedData.platform ?? platform}</span>
                   </div>
                   <div>
                     <span className="font-medium text-green-700">消息数：</span>
-                    <span className="text-green-600">{parsedData.messages_count}</span>
+                    <span className="text-green-600">{parsedData.messages_count ?? 0}</span>
                   </div>
                   <div>
                     <span className="font-medium text-green-700">参与者：</span>
-                    <span className="text-green-600">{parsedData.participants?.join(', ')}</span>
+                    <span className="text-green-600">{parsedData.participants?.join(', ') ?? '-'}</span>
                   </div>
                   <div>
                     <span className="font-medium text-green-700">解析时间：</span>
-                    <span className="text-green-600">{new Date(parsedData.parsed_at).toLocaleString()}</span>
+                    <span className="text-green-600">
+                      {parsedData.parsed_at ? new Date(parsedData.parsed_at).toLocaleString() : '-'}
+                    </span>
                   </div>
                 </div>
               </div>
