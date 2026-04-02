@@ -4,20 +4,17 @@ from openai import OpenAI
 
 class DeepSeekModel(Model):
     def __init__(self, config: dict):
-        self.name = config["name"]
-        self.api_key = config["api_key"]
-        self.model_name = config["model_name"]
-        self.base_url = config["base_url"]
+        try:
+            self.name = config["name"]
+            self.api_key = config["api_key"]
+            self.model_name = config["model_name"]
+            self.base_url = config["base_url"]
+        except KeyError as e:
+            raise ValueError(f"DeepSeek 配置缺少字段: {e.args[0]}") from e
     
     def generate(self, prompt: str) -> str:
         if not isinstance(prompt, str) or not prompt.strip():
             raise ValueError("prompt 不能为空")
-        if not isinstance(self.api_key, str) or not self.api_key.strip():
-            raise ValueError("api_key 未配置")
-        if not isinstance(self.model_name, str) or not self.model_name.strip():
-            raise ValueError("model_name 未配置")
-        if not isinstance(self.base_url, str) or not self.base_url.strip():
-            raise ValueError("base_url 未配置")
 
         base_url = self.base_url.strip().strip("`").strip()
         candidates = [base_url]
