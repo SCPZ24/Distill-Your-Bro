@@ -13,16 +13,21 @@ class Model(ABC):
 
 class ModelManager:
     _instance: Optional["ModelManager"] = None
+    _initialized: bool = False
 
     @classmethod
-    def get_singleton_instance(cls) -> "ModelManager":
-        return cls()
-
-    def __new__(cls) -> "ModelManager":
+    def get_instance(cls, path: str = "config.yaml") -> "ModelManager":
         if cls._instance is None:
             cls._instance = super().__new__(cls)
-            cls._instance.model = None
+            cls._instance.__init(path)
         return cls._instance
+
+    def __init(self, path: str = "config.yaml") -> None:
+        if self._initialized:
+            return
+        self.model = None
+        self.init_from_config(path)
+        self._initialized = True
 
     def set_model(self, model: Model) -> None:
         self.model = model
