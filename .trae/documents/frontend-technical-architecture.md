@@ -45,7 +45,7 @@ POST /api/chatlogs/parse
 Request:
 | Param Name | Param Type | isRequired | Description |
 |------------|------------|------------|-------------|
-| platform | string | true | 聊天平台类型（wechat等） |
+| type | string | true | 聊天记录类型 |
 | payload | string | true | 原始聊天记录内容 |
 | options.text_only | boolean | false | 是否仅处理文本 |
 | options.my_name | string | false | 用户名称标识 |

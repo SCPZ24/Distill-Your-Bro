@@ -4,7 +4,7 @@ import { ArrowLeft, Upload, Settings, Eye, Save, RefreshCw } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 
 type ParsedChatLog = {
-  platform?: string
+  type?: string
   messages_count?: number
   participants?: string[]
   parsed_at?: string
@@ -13,7 +13,7 @@ type ParsedChatLog = {
 export default function SoulCreatePage() {
   const navigate = useNavigate()
   const [broName, setBroName] = useState('')
-  const [platform, setPlatform] = useState('wechat')
+  const [type, setType] = useState('txt')
   const [textOnly, setTextOnly] = useState(true)
   const myName = '我'
   const [chatLog, setChatLog] = useState('')
@@ -39,7 +39,8 @@ export default function SoulCreatePage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          platform,
+          bro_name: broName,
+          type,
           payload: chatLog,
           options: { text_only: textOnly, my_name: myName }
         })
@@ -205,8 +206,8 @@ export default function SoulCreatePage() {
                   聊天平台
                 </label>
                 <select
-                  value={platform}
-                  onChange={(e) => setPlatform(e.target.value)}
+                  value={type}
+                  onChange={(e) => setType(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 >
                   <option value="qq">QQ</option>
@@ -272,7 +273,7 @@ export default function SoulCreatePage() {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="font-medium text-green-700">平台：</span>
-                    <span className="text-green-600">{parsedData.platform ?? platform}</span>
+                    <span className="text-green-600">{parsedData.type ?? type}</span>
                   </div>
                   <div>
                     <span className="font-medium text-green-700">消息数：</span>

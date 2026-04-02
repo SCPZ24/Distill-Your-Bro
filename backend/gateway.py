@@ -5,6 +5,15 @@ from uuid import uuid4
 
 from flask import Blueprint, Response, jsonify, request
 
+from backend.models.model import ModelManager
+from backend.data.chatlog import store_chat_log, read_chat_log
+from backend.soul_extracter.request import extract_soul
+from backend.data.prompt_loader import load_prompt
+
+
+model_manager = ModelManager.get_instance()
+
+model = model_manager.get_model()
 
 gateway = Blueprint("gateway", __name__)
 
@@ -25,17 +34,25 @@ def _err(code: str, message: str, status_code: int = 400):
 
 
 @gateway.post("/api/chatlogs/parse")
-def parse_chatlogs(platform: str | None = None, payload: str | None = None, options: dict | None = None):
+def parse_chatlogs(bro_name: str | None = None, type: str | None = None, payload: str | None = None, options: dict | None = None):
     body = request.get_json(silent=True) or {}
-    platform = body.get("platform") or platform or "unknown"
-    payload = body.get("payload") or payload or ""
-    messages_count = len([line for line in str(payload).splitlines() if line.strip()])
+
+    bro_name = body.get("bro_name") or bro_name or None
+    if not bro_name:
+        return _err("INVALID_ARGUMENT", "缺少 bro_name", 400)
+
+    type = body.get("type") or type or None
+    payload = body.get("payload") or payload or None
+    if not type or not payload:
+        return _err("INVALID_ARGUMENT", "缺少 type 或 payload", 400)
+
+    if type == 'txt':
+        store_chat_log(bro_name, payload)
+        
     return _ok(
         {
-            "platform": platform,
-            "messages_count": messages_count,
-            "participants": [],
-            "parsed_at": _now_iso(),
+            "bro_name": bro_name,
+            "type": type,
         }
     )
 
@@ -43,9 +60,21 @@ def parse_chatlogs(platform: str | None = None, payload: str | None = None, opti
 @gateway.post("/api/souls/distill")
 def distill_soul(bro_name: str | None = None):
     body = request.get_json(silent=True) or {}
-    bro_name = body.get("bro_name") or bro_name or "unknown"
-    soul_markdown = f"# 角色：{bro_name}\n\n（占位内容：后端蒸馏逻辑尚未接入）\n"
-    return _ok({"bro_name": bro_name, "soul_markdown": soul_markdown})
+    
+    bro_name = body.get("bro_name") or bro_name or None
+    if not bro_name:
+        return _err("INVALID_ARGUMENT", "缺少 bro_name", 400)
+
+    chatlog = read_chat_log(bro_name)
+    if not chatlog:
+        return _err("NOT_FOUND", "此人的聊天记录不存在", 404)
+
+    meta_prompt = load_prompt("MetaPrompt.md")
+    prompt = f"你接下来要分析好兄弟的聊天记录，提取出记录中好兄弟的SOUL。其中，好兄弟的名字是**{bro_name}**。\n{meta_prompt}\n对话记录为：\n{chatlog}"
+
+    response = model.generate(prompt)
+
+    return _ok({"bro_name": bro_name, "soul_markdown": response})
 
 
 @gateway.post("/api/souls/save")
