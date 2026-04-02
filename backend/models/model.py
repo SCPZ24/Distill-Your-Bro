@@ -28,48 +28,33 @@ class ModelManager:
             raise ValueError("model 未初始化")
         return self.model
 
-    def init_from_config(self, config: object) -> Model:
-        if isinstance(config, str):
-            return self.init_from_yaml(config)
-        if not isinstance(config, dict):
-            raise ValueError("config 必须是 dict 或 config.yaml 路径字符串")
-
-        provider = str(config.get("provider", "")).strip().lower()
-        model_cls = self._model_class_from_provider(provider, config.get("provider"))
-        self.model = model_cls(dict(config))
-        return self.model
-
-    def init_from_yaml(self, path: str = "config.yaml") -> Model:
+    def init_from_config(self, path: str = "config.yaml") -> Model:
         raw = self._load_yaml(path)
         model_cfg = raw.get("model", raw)
         if not isinstance(model_cfg, dict):
             raise ValueError("config.yaml 中 model 配置格式错误")
 
         provider_raw = model_cfg.get("provider")
-        provider = str(provider_raw or "").strip().lower()
-        if not provider:
+        if not provider_raw:
             raise ValueError("config.yaml 缺少 provider")
 
-        model_cls = self._model_class_from_provider(provider, provider_raw)
-        cfg: Dict[str, Any] = {}
-        for key in ("provider", "name", "api_key", "model_name", "base_url"):
-            if key in model_cfg:
-                cfg[key] = model_cfg[key]
+        model_cls = self._model_class_from_provider(str(provider_raw))
+        cfg: Dict[str, Any] = dict(model_cfg)
         self.model = model_cls(cfg)
         return self.model
 
-    def _model_class_from_provider(
-        self, provider: str, provider_raw: object
-    ) -> Type[Model]:
-        if provider in {"deepseek", "deep_seek"}:
-            from backend.models.model_from_provider.DeepSeekProvider import DeepSeekModel
+    def _model_class_from_provider(self, provider: str) -> Type[Model]:
+        match provider:
+            case "DeepSeek":
+                from backend.models.model_from_provider.DeepSeekProvider import DeepSeekModel
 
-            return DeepSeekModel
-        if provider in {"volcengine", "volces", "ark", "doubao"}:
-            from backend.models.model_from_provider.VolcengineProvider import VolcengineModel
+                return DeepSeekModel
+            case "Volcengine":
+                from backend.models.model_from_provider.VolcengineProvider import VolcengineModel
 
-            return VolcengineModel
-        raise ValueError(f"不支持的 provider: {provider_raw}")
+                return VolcengineModel
+            case _:
+                raise ValueError(f"不支持的 provider: {provider}")
 
     def _load_yaml(self, path: str) -> Dict[str, Any]:
         text = open(path, "r", encoding="utf-8").read()
