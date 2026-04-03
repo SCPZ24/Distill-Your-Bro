@@ -6,3 +6,7 @@ __pycache__/
 /souls/*
 /chatlogstr/*
 /sessions/*
+
+
+# MacOS
+.DS_Store
