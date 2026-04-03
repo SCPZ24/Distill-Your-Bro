@@ -7,8 +7,8 @@ from flask import Blueprint, Response, jsonify, request
 
 from backend.models.model import ModelManager
 from backend.data.chatlog import store_chat_log, read_chat_log
-from backend.soul_extracter.request import extract_soul
 from backend.data.prompt_loader import load_prompt
+from backend.data.soul import store_soul, read_soul, view_soul, remove_soul, export_soul_markdown
 
 
 model_manager = ModelManager.get_instance()
@@ -17,9 +17,7 @@ model = model_manager.get_model()
 
 gateway = Blueprint("gateway", __name__)
 
-_souls: dict[str, dict] = {}
 _sessions: dict[str, dict] = {}
-
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -88,45 +86,44 @@ def save_soul(bro_name: str | None = None, soul_markdown: str | None = None):
     body = request.get_json(silent=True) or {}
     bro_name = body.get("bro_name") or bro_name
     soul_markdown = body.get("soul_markdown") or soul_markdown or ""
-    if not bro_name:
-        return _err("INVALID_ARGUMENT", "缺少 bro_name", 400)
+    if not bro_name or not soul_markdown:
+        return _err("INVALID_ARGUMENT", "缺少 bro_name 或 soul_markdown", 400)
 
     created_at = _now_iso()
-    _souls[bro_name] = {"bro_name": bro_name, "created_at": created_at, "soul_markdown": soul_markdown}
-    return _ok({"path": f"souls/{bro_name}_SOUL.md"})
+    safe_name = store_soul(bro_name, soul_markdown, created_at)
+    return _ok({"path": f"souls/{safe_name}.md", "created_at": created_at})
 
 
 @gateway.get("/api/souls")
 def list_souls():
-    data = [{"bro_name": v["bro_name"], "created_at": v["created_at"]} for v in _souls.values()]
-    return _ok(data)
+    souls = view_soul()
+    return _ok([{"bro_name": bro_name, "created_at": created_at} for bro_name, created_at in souls])
 
 
 @gateway.get("/api/souls/<string:bro_name>")
 def get_soul(bro_name: str):
-    soul = _souls.get(bro_name)
-    if not soul:
+    soul_markdown = read_soul(bro_name)
+    if soul_markdown is None:
         return _err("NOT_FOUND", "SOUL 不存在", 404)
-    return _ok({"bro_name": bro_name, "soul_markdown": soul.get("soul_markdown", "")})
+    return _ok({"bro_name": bro_name, "soul_markdown": soul_markdown})
 
 
 @gateway.get("/api/souls/<string:bro_name>/export")
 def export_soul(bro_name: str):
-    soul = _souls.get(bro_name)
-    if not soul:
+    exported = export_soul_markdown(bro_name)
+    if exported is None:
         return _err("NOT_FOUND", "SOUL 不存在", 404)
+    file_name, content = exported
 
-    content = soul.get("soul_markdown", "")
     response = Response(content, mimetype="text/markdown; charset=utf-8")
-    response.headers["Content-Disposition"] = f'attachment; filename="{bro_name}_SOUL.md"'
+    response.headers["Content-Disposition"] = f'attachment; filename="{file_name}"'
     return response
 
 
 @gateway.delete("/api/souls/<string:bro_name>")
 def delete_soul(bro_name: str):
-    if bro_name not in _souls:
+    if not remove_soul(bro_name):
         return _err("NOT_FOUND", "SOUL 不存在", 404)
-    del _souls[bro_name]
     return _ok({"deleted": True})
 
 
