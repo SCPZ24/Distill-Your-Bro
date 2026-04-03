@@ -46,13 +46,19 @@ def parse_chatlogs(bro_name: str | None = None, type: str | None = None, payload
     if not type or not payload:
         return _err("INVALID_ARGUMENT", "缺少 type 或 payload", 400)
 
-    if type == 'txt':
+    if type == 'db':
+        store_chat_log(bro_name, payload)
+    elif type == 'txt':
         store_chat_log(bro_name, payload)
         
+    messages_count = len([line for line in str(payload).splitlines() if line.strip()])
     return _ok(
         {
             "bro_name": bro_name,
             "type": type,
+            "messages_count": messages_count,
+            "participants": [bro_name],
+            "parsed_at": _now_iso(),
         }
     )
 

@@ -2,3 +2,7 @@ config.yaml
 __pycache__/
 *.py[cod]
 *$py.class
+
+/souls/*
+/chatlogstr/*
+/sessions/*
