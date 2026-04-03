@@ -5,6 +5,8 @@ from uuid import uuid4
 
 from flask import Blueprint, Response, jsonify, request
 
+import re
+
 from backend.models.model import ModelManager
 from backend.data.chatlog import store_chat_log, read_chat_log
 from backend.data.prompt_loader import load_prompt
@@ -30,6 +32,10 @@ def _ok(data, status_code: int = 200):
 
 def _err(code: str, message: str, status_code: int = 400):
     return jsonify({"ok": False, "error": {"code": code, "message": message}}), status_code
+
+
+def _split_bro_messages(content: str) -> list[str]:
+    return [m.strip() for m in re.split(r"\s+", str(content)) if m and m.strip()]
 
 
 @gateway.post("/api/chatlogs/parse")
@@ -164,7 +170,11 @@ def get_session(session_id: str):
     chat_history: list[dict[str, str]] = []
     for user_message, bro_message in session.message_list:
         chat_history.append({"role": "user", "content": user_message})
-        chat_history.append({"role": "assistant", "content": bro_message})
+        bro_messages = _split_bro_messages(str(bro_message))
+        if not bro_messages:
+            continue
+        for m in bro_messages:
+            chat_history.append({"role": "assistant", "content": m})
     return _ok({"id": session.session_id, "bro_name": session.bro_name, "chat_history": chat_history})
 
 
@@ -182,13 +192,18 @@ def create_session_message(session_id: str, user_msg: str | None = None):
 
     prompt = session.concatenate_prompt(message)
     bro_reply = model.generate(prompt)
-    session.add_message(message, bro_reply)
+    bro_messages = _split_bro_messages(str(bro_reply))
+    session.add_message(message, bro_messages if bro_messages else str(bro_reply))
     session.store()
 
     chat_history: list[dict[str, str]] = []
     for user_message, bro_message in session.message_list:
         chat_history.append({"role": "user", "content": user_message})
-        chat_history.append({"role": "assistant", "content": bro_message})
+        bro_messages = _split_bro_messages(str(bro_message))
+        if not bro_messages:
+            continue
+        for m in bro_messages:
+            chat_history.append({"role": "assistant", "content": m})
     return _ok({"chat_history": chat_history})
 
 

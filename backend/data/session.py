@@ -1,7 +1,7 @@
 from pathlib import Path
 import json
 import re
-from typing import Optional
+from typing import Optional, Union
 
 from backend.data.soul import read_soul
 
@@ -16,6 +16,9 @@ def _to_safe_id(session_id: str) -> str:
 
 def session_path(session_id: str) -> Path:
     return WORK_DIRECTORY / f"{_to_safe_id(session_id)}.json"
+
+def _split_bro_messages(content: str) -> list[str]:
+    return [m.strip() for m in re.split(r"\s+", str(content)) if m and m.strip()]
 
 
 class Session:
@@ -42,7 +45,9 @@ class Session:
         }
         path.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 
-    def add_message(self, user_message: str, bro_message: str):
+    def add_message(self, user_message: str, bro_message: Union[str, list[str]]):
+        if isinstance(bro_message, list):
+            bro_message = "\n".join([m for m in bro_message if m is not None])
         self.message_list.append([user_message, bro_message])
 
     def concatenate_prompt(self, user_message: str) -> str:
@@ -61,7 +66,12 @@ class Session:
         lines: list[str] = []
         for user_message, bro_message in self.message_list:
             lines.append(f"用户：{user_message}")
-            lines.append(f"{self.bro_name}：{bro_message}")
+            bro_messages = _split_bro_messages(str(bro_message))
+            if not bro_messages:
+                lines.append(f"{self.bro_name}：")
+                continue
+            for m in bro_messages:
+                lines.append(f"{self.bro_name}：{m}")
         return "\n".join(lines)
 
 
