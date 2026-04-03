@@ -9,6 +9,7 @@ from backend.models.model import ModelManager
 from backend.data.chatlog import store_chat_log, read_chat_log
 from backend.data.prompt_loader import load_prompt
 from backend.data.soul import store_soul, read_soul, view_soul, remove_soul, export_soul_markdown
+from backend.data.session import Session, new_session, view_session, remove_session
 
 
 model_manager = ModelManager.get_instance()
@@ -130,46 +131,48 @@ def delete_soul(bro_name: str):
 @gateway.post("/api/sessions")
 def create_session(session_id: str | None = None):
     body = request.get_json(silent=True) or {}
-    bro_name = body.get("bro_name") or "unknown"
+    bro_name = body.get("bro_name") or "BRO"
     session_id = body.get("session_id") or session_id or uuid4().hex
     created_at = _now_iso()
-    session = {
-        "id": session_id,
-        "bro_name": bro_name,
-        "created_at": created_at,
-        "last_message_at": created_at,
-        "chat_history": [],
-    }
-    _sessions[session_id] = session
+    new_session(session_id, bro_name, created_at)
     return _ok({"id": session_id, "bro_name": bro_name, "chat_history": []})
 
 
 @gateway.get("/api/sessions")
 def list_sessions():
-    data = [
-        {
-            "id": v["id"],
-            "bro_name": v["bro_name"],
-            "created_at": v["created_at"],
-            "last_message_at": v["last_message_at"],
-        }
-        for v in _sessions.values()
-    ]
-    return _ok(data)
+    sessions = view_session()
+    return _ok(
+        [
+            {
+                "id": session_id,
+                "bro_name": bro_name,
+                "created_at": created_time,
+                "last_message_at": created_time,
+            }
+            for session_id, bro_name, created_time in sessions
+        ]
+    )
 
 
 @gateway.get("/api/sessions/<string:session_id>")
 def get_session(session_id: str):
-    session = _sessions.get(session_id)
-    if not session:
+    try:
+        session = Session(session_id)
+    except FileNotFoundError:
         return _err("NOT_FOUND", "Session 不存在", 404)
-    return _ok({"id": session["id"], "bro_name": session["bro_name"], "chat_history": session["chat_history"]})
+
+    chat_history: list[dict[str, str]] = []
+    for user_message, bro_message in session.message_list:
+        chat_history.append({"role": "user", "content": user_message})
+        chat_history.append({"role": "assistant", "content": bro_message})
+    return _ok({"id": session.session_id, "bro_name": session.bro_name, "chat_history": chat_history})
 
 
 @gateway.post("/api/sessions/<string:session_id>/messages")
 def create_session_message(session_id: str, user_msg: str | None = None):
-    session = _sessions.get(session_id)
-    if not session:
+    try:
+        session = Session(session_id)
+    except FileNotFoundError:
         return _err("NOT_FOUND", "Session 不存在", 404)
 
     body = request.get_json(silent=True) or {}
@@ -177,15 +180,20 @@ def create_session_message(session_id: str, user_msg: str | None = None):
     if not message:
         return _err("INVALID_ARGUMENT", "缺少 message/user_msg", 400)
 
-    session["chat_history"].append({"role": "user", "content": message})
-    session["chat_history"].append({"role": "assistant", "content": f"（占位回复）你刚才说：{message}"})
-    session["last_message_at"] = _now_iso()
-    return _ok({"chat_history": session["chat_history"]})
+    prompt = session.concatenate_prompt(message)
+    bro_reply = model.generate(prompt)
+    session.add_message(message, bro_reply)
+    session.store()
+
+    chat_history: list[dict[str, str]] = []
+    for user_message, bro_message in session.message_list:
+        chat_history.append({"role": "user", "content": user_message})
+        chat_history.append({"role": "assistant", "content": bro_message})
+    return _ok({"chat_history": chat_history})
 
 
 @gateway.delete("/api/sessions/<string:session_id>")
 def delete_session(session_id: str):
-    if session_id not in _sessions:
+    if not remove_session(session_id):
         return _err("NOT_FOUND", "Session 不存在", 404)
-    del _sessions[session_id]
     return _ok({"deleted": True})
