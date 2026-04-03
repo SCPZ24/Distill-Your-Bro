@@ -18,7 +18,7 @@ def session_path(session_id: str) -> Path:
     return WORK_DIRECTORY / f"{_to_safe_id(session_id)}.json"
 
 def _split_bro_messages(content: str) -> list[str]:
-    return [m.strip() for m in re.split(r"\s+", str(content)) if m and m.strip()]
+    return [m.strip() for m in re.split(r"[\s？。！.?!]+", str(content)) if m and m.strip()]
 
 
 class Session:

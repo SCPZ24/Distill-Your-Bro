@@ -35,7 +35,7 @@ def _err(code: str, message: str, status_code: int = 400):
 
 
 def _split_bro_messages(content: str) -> list[str]:
-    return [m.strip() for m in re.split(r"\s+", str(content)) if m and m.strip()]
+    return [m.strip() for m in re.split(r"[\s？。！.?!]+", str(content)) if m and m.strip()]
 
 
 @gateway.post("/api/chatlogs/parse")
